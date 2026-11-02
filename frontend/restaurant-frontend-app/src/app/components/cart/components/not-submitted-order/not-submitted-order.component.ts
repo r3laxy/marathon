@@ -5,6 +5,7 @@ import {
   computed,
   input,
   output,
+  signal,
 } from '@angular/core';
 
 import { GroupPreOrder } from '@app/models/orders/group-pre-order.model';
@@ -27,6 +28,9 @@ export class NotSubmittedOrderComponent {
   readonly removeParticipant = output<string>();
   readonly refreshGroup = output<void>();
   readonly removeDish = output<string>();
+
+  /** Dishes whose photo failed to load — a letter avatar is shown instead of broken alt text. */
+  readonly brokenImages = signal<ReadonlySet<string>>(new Set());
   readonly updateQuantity = output<{
     itemId: string;
     quantity: number;
@@ -45,6 +49,10 @@ export class NotSubmittedOrderComponent {
       .filter((participant) => participant.isSubmitted)
       .reduce((total, participant) => total + participant.total, 0),
   );
+
+  markImageBroken(dishId: string): void {
+    this.brokenImages.update((ids) => new Set(ids).add(dishId));
+  }
 
   incrementItemQuantity(itemId: string): void {
     const item = this.findOrderItem(itemId);

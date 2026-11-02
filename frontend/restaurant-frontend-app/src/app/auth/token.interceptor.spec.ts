@@ -18,7 +18,9 @@ describe('tokenInterceptor', () => {
     const authService = jasmine.createSpyObj<AuthenticationService>('AuthenticationService', [
       'getTokens',
     ]);
-    authService.getTokens.and.returnValue(null);
+    authService.getTokens.and.returnValue({ idToken: 'id-token' } as ReturnType<
+      AuthenticationService['getTokens']
+    >);
 
     TestBed.configureTestingModule({
       providers: [
@@ -59,5 +61,41 @@ describe('tokenInterceptor', () => {
 
     expect(toastService.error).not.toHaveBeenCalled();
     expect(receivedStatus).toBe(400);
+  });
+
+  it('sends the Authorization header to the Owner group sessions endpoints', () => {
+    http.get('https://test.api/guest/groups/grp-1/sessions').subscribe();
+    http.delete('https://test.api/guest/groups/grp-1/sessions/gs-1').subscribe();
+
+    expect(
+      httpMock.expectOne('https://test.api/guest/groups/grp-1/sessions').request.headers.get('Authorization'),
+    ).toBe('Bearer id-token');
+    expect(
+      httpMock
+        .expectOne('https://test.api/guest/groups/grp-1/sessions/gs-1')
+        .request.headers.get('Authorization'),
+    ).toBe('Bearer id-token');
+  });
+
+  it('does not touch other guest endpoints (no Authorization header)', () => {
+    http.get('https://test.api/guest/groups/grp-1/status').subscribe();
+
+    expect(
+      httpMock.expectOne('https://test.api/guest/groups/grp-1/status').request.headers.has('Authorization'),
+    ).toBeFalse();
+  });
+
+  it('does not show a toast for a silent guest-path request', () => {
+    http
+      .get('https://test.api/guest/groups/grp-1/status', {
+        context: new HttpContext().set(SKIP_ERROR_TOAST, true),
+      })
+      .subscribe({ error: () => undefined });
+
+    httpMock
+      .expectOne('https://test.api/guest/groups/grp-1/status')
+      .flush({}, { status: 500, statusText: 'Server Error' });
+
+    expect(toastService.error).not.toHaveBeenCalled();
   });
 });

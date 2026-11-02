@@ -9,13 +9,20 @@
       <div class="order-item">
         @for (item of order().orderItems; track item.dish.id) {
         <div class="order-item-dish">
-          <img
-            class="dish-image"
-            [src]="item.dish.imageUrl"
-            [alt]="item.dish.name"
-            width="96"
-            height="96"
-          />
+          @if (item.dish.imageUrl && !brokenImages().has(item.dish.id)) {
+            <img
+              class="dish-image"
+              [src]="item.dish.imageUrl"
+              [alt]="item.dish.name"
+              width="96"
+              height="96"
+              (error)="markImageBroken(item.dish.id)"
+            />
+          } @else {
+            <span class="dish-image dish-image--initial" aria-hidden="true">
+              {{ (item.dish.name || '?').charAt(0) }}
+            </span>
+          }
 
           <div class="container">
             <div class="details">
