@@ -1,0 +1,47 @@
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+
+# OS
+.DS_Store
+._*
+Thumbs.db
+
+# Node
+node_modules/
+
+# Local env
+.env
+.env.local
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+
+# Claude Code local state and worktrees
+.claude/
+
+# Frontend build
+dist/
+.angular/
+environment.production.ts
+
+# Backend build (.NET / Syndicate)
+bin/
+obj/
+.syndicate/
+syndicate_venv/
+__pycache__/
+
+# AWS / secrets
+.aws/
+*.pem
+*.key
+credentials*
