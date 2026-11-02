@@ -21,9 +21,11 @@
         </div>
       </div>
       @if (preOrderEnabled()) {
-        <app-custom-button size="small" fullWidth [disabled]="isUnavailable()" (click)="preOrderClicked.emit()">
-          Pre-Order
-        </app-custom-button>
+        <div class="preorder-action" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" (keydown.space)="$event.stopPropagation()" role="presentation">
+          <app-custom-button size="small" fullWidth [disabled]="isUnavailable()" (click)="preOrderClicked.emit()">
+            Pre-Order
+          </app-custom-button>
+        </div>
       }
     </div>
     <ng-content select="[dish-footer]"></ng-content>

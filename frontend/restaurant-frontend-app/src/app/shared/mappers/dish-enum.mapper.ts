@@ -18,5 +18,5 @@ export const DishSortingLabels: Record<DishSort, string> = {
 export const DishStateLabels: Record<DishState, string> = {
   [DishState.OnStop]: 'On Stop',
   [DishState.Available]: 'Available',
-  [DishState.OutOfStock]: 'Out Of Stock',
+  [DishState.OutOfStock]: 'Sold Out',
 };

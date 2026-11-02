@@ -138,6 +138,7 @@
     <app-submit-order-modal
       [order]="order"
       (closed)="closeSubmitModal()"
+      (reservationsViewed)="closeSubmitModal(); goToReservations()"
       (edited)="editOrderModal()"
       (canceled)="openCancelModal(orderId)"
     />

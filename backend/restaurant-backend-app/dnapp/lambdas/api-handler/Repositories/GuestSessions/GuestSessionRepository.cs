@@ -58,7 +58,9 @@ public class GuestSessionRepository(IDynamoDBContext context) : IGuestSessionRep
             IndexName = GlobalSecondaryIndexes.GuestSession.GroupReservationId
         }).GetRemainingAsync();
 
-        return result.Count;
+        // The owner's own session (created for the group pre-order screen) is not a joined guest:
+        // the owner is already counted in the reservation's guest count.
+        return result.Count(session => !session.IsOwnerSession);
     }
 
     public async Task DeleteAsync(GuestSession session)

@@ -21,23 +21,29 @@ export class DishCardComponent {
   readonly dishClicked = output<void>();
   readonly preOrderClicked = output<void>();
 
-  readonly dishStateLabel = computed(() => {
-    const state = this.dish().state;
-
-    return DishStateLabels[state as DishState] ?? state;
-  });
-
-  readonly isUnavailable = computed(() => {
-    const state = this.dish().state.toLowerCase();
+  // The API sends labels like "Out of stock" / "On stop"; normalise them to the enum values.
+  private readonly normalizedState = computed(() => {
+    const key = (this.dish().state ?? '').replace(/[\s_-]/g, '').toLowerCase();
 
     return (
-      state === DishState.OnStop.toLowerCase() ||
-      state === DishState.OutOfStock.toLowerCase()
+      Object.values(DishState).find((s) => s.toLowerCase() === key) ?? null
     );
   });
 
+  readonly dishStateLabel = computed(() => {
+    const state = this.normalizedState();
+
+    return state ? DishStateLabels[state] : this.dish().state;
+  });
+
+  readonly isUnavailable = computed(() => {
+    const state = this.normalizedState();
+
+    return state === DishState.OnStop || state === DishState.OutOfStock;
+  });
+
   onCardClicked(): void {
-    if (!this.isUnavailable() && !this.preOrderEnabled()) {
+    if (!this.isUnavailable()) {
       this.dishClicked.emit();
     }
   }

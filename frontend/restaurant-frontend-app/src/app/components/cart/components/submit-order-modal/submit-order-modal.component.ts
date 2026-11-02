@@ -21,6 +21,7 @@ export class SubmitOrderModalComponent {
   readonly canceled = output<void>();
   readonly edited = output<void>();
   readonly closed = output<void>();
+  readonly reservationsViewed = output<void>();
 
   cancelOrder(): void {
     this.canceled.emit();
@@ -28,6 +29,10 @@ export class SubmitOrderModalComponent {
 
   editOrder(): void {
     this.edited.emit();
+  }
+
+  viewReservations(): void {
+    this.reservationsViewed.emit();
   }
 
   closeModal(): void {

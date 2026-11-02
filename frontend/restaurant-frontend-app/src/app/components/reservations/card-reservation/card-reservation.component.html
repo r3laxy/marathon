@@ -1,3 +1,87 @@
+@if (role() === Roles.CUSTOMER) {
+  <li class="card-customer">
+    <div class="status-band" [class]="'status-band ' + statusView().class">
+      @if (hasUpdates()) {
+        <span class="update-dot" role="img" aria-label="New updates in the pre-order"></span>
+      }
+      {{ bandLabel() }}
+    </div>
+
+    <div class="customer-body">
+      <div class="customer-line">
+        <span class="customer-address">
+          <img class="line-icon" src="assets/svg/location-green.svg" alt="" aria-hidden="true" />
+          {{ r().locationAddress }}
+        </span>
+
+        @if (r().status === ReservationStatusCustomer.Reserved) {
+          <button type="button" class="trash-button" aria-label="Cancel reservation" (click)="cancelReservation.emit(r().id)">
+            <img src="assets/svg/trash.svg" alt="" width="24" height="24" />
+          </button>
+        }
+      </div>
+
+      @if (r().status === ReservationStatusCustomer.Reserved && r().guestCount > 1) {
+        <div class="invite-row">
+          <p>Share link with your guests so they can place their pre-orders</p>
+          <button type="button" class="outline-button" (click)="openInvite()">Invite Guests</button>
+        </div>
+      }
+
+      <div class="info-grid">
+        <span class="details">
+          <img class="line-icon" src="assets/svg/calendar-green.svg" alt="" aria-hidden="true" />
+          {{ r().startTime | date: 'mediumDate' }}
+        </span>
+        @if (showPreOrders()) {
+          <span class="details">
+            <img class="line-icon" src="assets/svg/pre-order.svg" alt="" aria-hidden="true" />
+            Pre-orders: <strong>{{ preOrdersCount() }}</strong><span class="of-total">/{{ r().guestCount }}</span>
+          </span>
+          <span class="details">
+            <img class="line-icon" src="assets/svg/clock-green.svg" alt="" aria-hidden="true" />
+            {{ r().startTime | date: 'shortTime' }} - {{ r().endTime | date: 'shortTime' }}
+          </span>
+          <span class="details">
+            <img class="line-icon" src="assets/svg/people-green.svg" alt="" aria-hidden="true" />
+            {{ r().guestCount }} {{ r().guestCount === 1 ? 'Guest' : 'Guests' }}
+          </span>
+        } @else {
+          <span class="details">
+            <img class="line-icon" src="assets/svg/people-green.svg" alt="" aria-hidden="true" />
+            {{ r().guestCount }} {{ r().guestCount === 1 ? 'Guest' : 'Guests' }}
+          </span>
+          <span class="details">
+            <img class="line-icon" src="assets/svg/clock-green.svg" alt="" aria-hidden="true" />
+            {{ r().startTime | date: 'shortTime' }} - {{ r().endTime | date: 'shortTime' }}
+          </span>
+        }
+      </div>
+
+      @if (hasCustomerActions()) {
+        <div class="customer-actions">
+          @if (r().status === ReservationStatusCustomer.Reserved) {
+            <button type="button" class="text-button" (click)="editReservation.emit(r())">Edit</button>
+            @if (r().guestCount > 1) {
+              <button type="button" class="outline-button" (click)="onGroupPreOrder()">Group Pre-Order</button>
+            }
+            <button type="button" class="solid-button" (click)="onPreOrder()">Add Pre-Order</button>
+          }
+          @if (
+            r().status !== ReservationStatusCustomer.Reserved &&
+            r().status !== ReservationStatusCustomer.Cancelled
+          ) {
+            @if (hasFullFeedback()) {
+              <button type="button" class="outline-button" (click)="updateFeedbackReservation.emit(r())">Update Feedback</button>
+            } @else {
+              <button type="button" class="solid-button" (click)="leaveFeedbackReservation.emit(r())">Leave Feedback</button>
+            }
+          }
+        </div>
+      }
+    </div>
+  </li>
+} @else {
 <li class="card">
   <div class="details-wrapper">
     <div class="details-line with-table">
@@ -293,6 +377,7 @@
     }
   </div>
 </li>
+}
 
 @if (showWaiterOrderModal()) {
   <app-place-order-waiter
@@ -301,4 +386,35 @@
     (closeModal)="closeWaiterOrderModal()"
     (placeOrder)="onWaiterOrderCreated($event)"
   />
+}
+
+@if (groupOrderOpen()) {
+  <app-modal width="820px" surface="muted" (closed)="closeGroupOrder()">
+    @defer {
+      <app-group-order-page [reservationId]="r().id" />
+    }
+  </app-modal>
+}
+
+@if (inviteOpen()) {
+  <app-modal width="520px" title="Guest Invite link" (closed)="closeInvite()">
+    <p class="invite-text">Share this link with your guests so they can place their pre-orders.</p>
+    <dl class="invite-details">
+      <dt>Location:</dt><dd>{{ r().locationAddress }}</dd>
+      <dt>Date:</dt><dd>{{ r().startTime | date: 'mediumDate' }}</dd>
+      <dt>Time:</dt><dd>{{ r().startTime | date: 'HH:mm' }} - {{ r().endTime | date: 'HH:mm' }}</dd>
+      <dt>Guests:</dt><dd>{{ r().guestCount }} people</dd>
+    </dl>
+    <div>
+      <p class="invite-label">Invite Link</p>
+      <div class="invite-link">
+        <input type="text" readonly aria-label="Invite link" [value]="inviteLoading() ? 'Loading…' : (inviteLink() ?? 'Link is unavailable')" />
+        <button type="button" class="copy-button" [disabled]="!inviteLink()" (click)="copyInvite()">
+          <img src="assets/svg/copy.svg" alt="" width="24" height="24" />
+          <span class="visually-hidden">Copy link</span>
+        </button>
+      </div>
+      <p class="invite-hint">Copy this link, then paste it into a message to your guests.</p>
+    </div>
+  </app-modal>
 }

@@ -16,62 +16,25 @@
     (keydown)="$event.stopPropagation()"
   >
     <div class="modal-header">
-      <h2 id="submitted-order-title">
-        Pre-order Submitted!
-      </h2>
+      <h2 id="submitted-order-title">Pre-Order Submitted</h2>
 
       <button
         type="button"
-        class="icon-button icon-button--small"
+        class="icon-button icon-button--small close-button"
         aria-label="Close dialog"
         (click)="closeModal()"
       >
-        <img
-          src="assets/svg/close.svg"
-          alt=""
-          aria-hidden="true"
-        />
+        <img src="assets/svg/close.svg" alt="" aria-hidden="true" />
       </button>
     </div>
 
-    <p class="body">
-      Your pre-order for the reservation
-      <strong>{{ order().reservationAddress }}</strong>,
-      <strong>{{ order().reservationTime }}</strong>
-      has been successfully submitted.
-    </p>
-
-    <p class="body">
-      We are checking the availability of your dish, and
-      you will receive confirmation soon.
-    </p>
-
-    <p class="body">
-      You can modify or cancel your pre-order up to
-      <strong>30 minutes</strong> before your reserved table
-      time.
-    </p>
-
-    <p class="body">
-      Thank you for choosing us!
-    </p>
-
-    <div class="actions">
-      <button
-        type="button"
-        class="button button--secondary button--large"
-        (click)="cancelOrder()"
-      >
-        Cancel Pre-order
-      </button>
-
-      <button
-        type="button"
-        class="button button--primary button--large"
-        (click)="editOrder()"
-      >
-        Edit Pre-order
-      </button>
+    <div class="text">
+      <p class="body">Your Pre-Order was sent successfully.</p>
+      <p class="body">Wait for the confirmation from the restaurant.</p>
     </div>
+
+    <button type="button" class="view-button" (click)="viewReservations()">
+      View Reservations
+    </button>
   </div>
 </div>

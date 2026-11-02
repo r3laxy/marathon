@@ -1,6 +1,6 @@
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, catchError, map, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, throwError } from 'rxjs';
 
 import { SKIP_ERROR_TOAST } from '@app/auth/skip-error-toast.context';
 import { GroupStatusResponse } from '@app/models/group-orders/group-status.model';
@@ -28,22 +28,40 @@ export class GroupOrdersService {
    */
   getGroupInvite$(reservationId: string): Observable<GuestInvite> {
     return this.http
-      .get<GroupInviteToken>(`${this.baseUrl}/reservations/${encodeURIComponent(reservationId)}/invite-token`)
+      .get<GroupInviteToken>(`${this.baseUrl}/reservations/${encodeURIComponent(reservationId)}/invite-token`, {
+        context: new HttpContext().set(SKIP_ERROR_TOAST, true),
+      })
       .pipe(
+        // Once the group was submitted (or closed) the API no longer hands out the token;
+        // the owner can still open the screen, built from the reservation and the regular order.
+        catchError((error: unknown) =>
+          this.canFallBackToReservation(error)
+            ? this.inviteFromReservation$(reservationId, '').pipe(map((invite) => ({ token: '', invite })))
+            : throwError(() => error),
+        ),
         switchMap((response) =>
+          'invite' in response ? of(response.invite) :
           this.http
             .get<GuestInvite>(`${this.baseUrl}/guest/invites/${encodeURIComponent(response.token)}`, {
               context: new HttpContext().set(SKIP_ERROR_TOAST, true),
             })
             .pipe(
               catchError((error: unknown) =>
-                this.isGuestLimitError(error) && response.groupReservationId
+                this.canFallBackToReservation(error) && response.groupReservationId
                   ? this.inviteFromReservation$(reservationId, response.groupReservationId)
                   : throwError(() => error),
               ),
             ),
         ),
       );
+  }
+
+  /** Токен запрошення: з нього складається посилання /join/{token} для нових гостей. */
+  getInviteToken$(reservationId: string, options?: GroupOrdersRequestOptions): Observable<GroupInviteToken> {
+    return this.http.get<GroupInviteToken>(
+      `${this.baseUrl}/reservations/${encodeURIComponent(reservationId)}/invite-token`,
+      { context: this.contextFor(options) },
+    );
   }
 
   getSessions$(groupReservationId: string, options?: GroupOrdersRequestOptions): Observable<GroupSessionsResponse> {
@@ -100,10 +118,12 @@ export class GroupOrdersService {
       );
   }
 
-  private isGuestLimitError(error: unknown): boolean {
-    if (!(error instanceof HttpErrorResponse) || error.status !== 400) return false;
-    const body = error.error as { errorCode?: string } | null;
-    return body?.errorCode === 'GuestLimitExceeded';
+  /**
+   * The public invite endpoint refuses the owner when the group is full, closed or already
+   * submitted; the reservation itself is still readable, so use it instead of failing.
+   */
+  private canFallBackToReservation(error: unknown): boolean {
+    return error instanceof HttpErrorResponse && error.status >= 400 && error.status < 500 && error.status !== 404;
   }
 
   private contextFor(options?: GroupOrdersRequestOptions): HttpContext {

@@ -6,6 +6,126 @@
         ({{ order().reservationAddress }}, {{ order().reservationTime }})
       </span>
 
+      @if (!group()) {
+        <ng-container [ngTemplateOutlet]="ownerDishes" />
+      }
+    </div>
+
+    @if (group(); as groupPreOrder) {
+      <section class="group" aria-label="Group pre-order">
+        <div class="group-header">
+          <span class="body-bold">Group pre-order</span>
+
+          <button
+            type="button"
+            class="button button--tertiary group-refresh"
+            (click)="refreshGroup.emit()"
+          >
+            Refresh
+          </button>
+        </div>
+
+        @if (participants().length === 0) {
+          <span class="body">
+            Nobody has joined yet. Share the invite link from your reservation.
+          </span>
+        } @else {
+          @for (participant of participants(); track participant.id) {
+            <div class="participant">
+              <div class="participant-header">
+                <span class="body-bold">
+                  {{ participant.name }}@if (participant.type === 'Owner') { (you)}
+                </span>
+
+                <span
+                  class="badge"
+                  [class.badge--submitted]="participant.isSubmitted"
+                >
+                  {{ participant.isSubmitted ? 'Submitted' : 'Not submitted' }}
+                </span>
+
+                @if (participant.type !== 'Owner') {
+                  <button
+                    type="button"
+                    class="icon-button icon-button--small"
+                    [attr.aria-label]="'Remove ' + participant.name + ' from the group'"
+                    (click)="removeParticipant.emit(participant.id)"
+                  >
+                    <img
+                      src="assets/svg/trash.svg"
+                      alt=""
+                      aria-hidden="true"
+                      width="24"
+                      height="24"
+                    />
+                  </button>
+                }
+              </div>
+
+              @if (participant.type === 'Owner') {
+                <ng-container [ngTemplateOutlet]="ownerDishes" />
+              } @else {
+              @for (item of participant.items; track item.dish.id) {
+                <div class="order-item-dish">
+                  @if (guestImageUrl(item.dish) && !brokenImages().has(item.dish.id)) {
+                    <img
+                      class="dish-image"
+                      [src]="guestImageUrl(item.dish)"
+                      [alt]="item.dish.name"
+                      width="64"
+                      height="64"
+                      (error)="markImageBroken(item.dish.id)"
+                    />
+                  } @else {
+                    <span class="dish-image dish-image--initial" aria-hidden="true">
+                      {{ (item.dish.name || '?').charAt(0) }}
+                    </span>
+                  }
+
+                  <div class="guest-dish">
+                    <span class="body-bold">{{ item.dish.name }}</span>
+                    <span class="caption">{{ item.quantity }} × {{ item.dish.price | currency }}</span>
+                  </div>
+
+                  <span class="item-price">{{ item.dish.price * item.quantity | currency }}</span>
+                </div>
+              } @empty {
+                <span class="caption">No dishes yet</span>
+              }
+              }
+
+              <div class="participant-total">
+                <span class="caption">Subtotal</span>
+                <span class="body-bold">{{ participant.total | currency }}</span>
+              </div>
+            </div>
+          }
+
+          <span class="caption">
+            Only dishes of guests who submitted their cart are added to the pre-order.
+          </span>
+        }
+      </section>
+    }
+
+  </div>
+
+  <footer class="order-footer">
+    <div class="total">
+      <span class="body-bold">Grand Total</span>
+      <h2>{{ totalPrice() + submittedGuestsTotal() | currency }}</h2>
+    </div>
+  <button
+    type="button"
+    class="submit-btn"
+    (click)="submit()"
+  >
+    Submit Pre-order
+  </button>
+  </footer>
+</div>
+
+<ng-template #ownerDishes>
       <div class="order-item">
         @for (item of order().orderItems; track item.dish.id) {
         <div class="order-item-dish">
@@ -51,39 +171,28 @@
                 <div class="quantity-buttons">
                   <button
                     type="button"
-                    class="icon-button icon-button--small"
+                    class="step-button step-button--minus"
+                    [class.step-button--active]="item.quantity > 1"
                     aria-label="Decrease quantity"
                     [disabled]="item.quantity <= 1"
                     (click)="decrementItemQuantity(item.dish.id)"
                   >
-                    <img
-                      src="assets/svg/minus-green.svg"
-                      alt=""
-                      aria-hidden="true"
-                      width="24"
-                      height="24"
-                    />
+                    -
                   </button>
 
                   <span class="value">{{ item.quantity }}</span>
 
                   <button
                     type="button"
-                    class="icon-button icon-button--small"
+                    class="step-button step-button--plus"
                     aria-label="Increase quantity"
                     (click)="incrementItemQuantity(item.dish.id)"
                   >
-                    <img
-                      src="assets/svg/plus-green.svg"
-                      alt=""
-                      aria-hidden="true"
-                      width="24"
-                      height="24"
-                    />
+                    +
                   </button>
                 </div>
 
-                <span class="body-bold">
+                <span class="item-price">
         {{ item.dish.price * item.quantity | currency }}
         </span>
       </div>
@@ -107,93 +216,4 @@
           Add dish
         </button>
       </div>
-    </div>
-
-    @if (group(); as groupPreOrder) {
-      <section class="group" aria-label="Group pre-order">
-        <div class="group-header">
-          <span class="body-bold">Group pre-order</span>
-
-          <button
-            type="button"
-            class="button button--tertiary group-refresh"
-            (click)="refreshGroup.emit()"
-          >
-            Refresh
-          </button>
-        </div>
-
-        @if (groupPreOrder.participants.length === 0) {
-          <span class="body">
-            Nobody has joined yet. Share the invite link from your reservation.
-          </span>
-        } @else {
-          @for (participant of groupPreOrder.participants; track participant.id) {
-            <div class="participant">
-              <div class="participant-header">
-                <span class="body-bold">
-                  {{ participant.name }}@if (participant.type === 'Owner') { (you)}
-                </span>
-
-                <span
-                  class="badge"
-                  [class.badge--submitted]="participant.isSubmitted"
-                >
-                  {{ participant.isSubmitted ? 'Submitted' : 'Not submitted' }}
-                </span>
-
-                @if (participant.type !== 'Owner') {
-                  <button
-                    type="button"
-                    class="icon-button icon-button--small"
-                    [attr.aria-label]="'Remove ' + participant.name + ' from the group'"
-                    (click)="removeParticipant.emit(participant.id)"
-                  >
-                    <img
-                      src="assets/svg/trash.svg"
-                      alt=""
-                      aria-hidden="true"
-                      width="24"
-                      height="24"
-                    />
-                  </button>
-                }
-              </div>
-
-              @for (item of participant.items; track item.dish.id) {
-                <div class="participant-item">
-                  <span class="body">{{ item.quantity }} × {{ item.dish.name }}</span>
-                  <span class="body">{{ item.dish.price * item.quantity | currency }}</span>
-                </div>
-              } @empty {
-                <span class="caption">No dishes yet</span>
-              }
-
-              <div class="participant-total">
-                <span class="caption">Subtotal</span>
-                <span class="body-bold">{{ participant.total | currency }}</span>
-              </div>
-            </div>
-          }
-
-          <span class="caption">
-            Only dishes of guests who submitted their cart are added to the pre-order.
-          </span>
-        }
-      </section>
-    }
-
-    <div class="total">
-      <span class="body-bold">Total payment</span>
-      <h2>{{ totalPrice() + submittedGuestsTotal() | currency }}</h2>
-    </div>
-  </div>
-
-  <button
-    type="button"
-    class="button button--primary button--large submit-btn"
-    (click)="submit()"
-  >
-    Submit Pre-order
-  </button>
-</div>
+</ng-template>

@@ -1,13 +1,16 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { EMPTY, catchError, exhaustMap, filter, forkJoin, interval, merge, of, switchMap, takeWhile } from 'rxjs';
+import { EMPTY, Observable, catchError, exhaustMap, filter, forkJoin, interval, map, merge, of, switchMap, takeWhile } from 'rxjs';
 
 import { ParticipantCardComponent } from '@app/components/group-orders/participant-card/participant-card.component';
 import { GroupStatusResponse } from '@app/models/group-orders/group-status.model';
-import { Participant } from '@app/models/group-orders/participant.model';
+import { Participant, ParticipantItem } from '@app/models/group-orders/participant.model';
+import { Order } from '@app/models/orders/order.model';
+import { SKIP_ERROR_TOAST } from '@app/auth/skip-error-toast.context';
+import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 import { GuestInvite } from '@app/models/reservations/guest-invite.model';
 import { GroupOrdersService } from '@app/services/group-orders/group-orders.service';
 import { ToastService } from '@app/services/toast/toast.service';
@@ -29,7 +32,19 @@ export class GroupOrderPageComponent implements OnInit {
   private readonly groupOrders = inject(GroupOrdersService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly reservationId = inject(ActivatedRoute).snapshot.paramMap.get('reservationId') ?? '';
+  private readonly http = inject(HttpClient, { optional: true });
+  private readonly baseUrl = inject(API_BASE_URL, { optional: true });
+  /** Власні страви Owner живуть у звичайному pre-order (його показує й корзина), а не в owner-сесії. */
+  private ownerItems: ParticipantItem[] | null = null;
+  private readonly routeReservationId = inject(ActivatedRoute).snapshot.paramMap.get('reservationId') ?? '';
+
+  /** Задається, коли екран відкрито модальним вікном з картки бронювання; інакше id береться з адреси. */
+  readonly reservationIdInput = input('', { alias: 'reservationId' });
+  readonly embedded = computed(() => this.reservationIdInput() !== '');
+
+  private get reservationId(): string {
+    return this.reservationIdInput() || this.routeReservationId;
+  }
 
   readonly loadState = signal<LoadState>('loading');
   readonly invite = signal<GuestInvite | null>(null);
@@ -58,11 +73,14 @@ export class GroupOrderPageComponent implements OnInit {
     return 'Collecting pre-orders';
   });
 
-  readonly guestsLabel = computed(() => {
-    const current = this.status()?.currentParticipants ?? this.participants().length;
-    const max = this.status()?.maxCapacity ?? this.invite()?.MaxGuestCount ?? current;
-    return `${current} of ${max} guests`;
-  });
+  readonly maxGuests = computed(() => this.status()?.maxCapacity ?? this.invite()?.MaxGuestCount ?? this.participants().length);
+  readonly guestsLabel = computed(() => `${this.participants().length} of ${this.maxGuests()} guests`);
+  /** Усі місця зайняті — щоб покликати ще когось, треба збільшити кількість гостей у бронюванні. */
+  readonly isFull = computed(() => this.participants().length >= this.maxGuests());
+
+  readonly inviteDialogOpen = signal(false);
+  readonly inviteLink = signal<string | null>(null);
+  readonly inviteLoading = signal(false);
 
   /** Лише підтверджені кошики, однакові страви — одним рядком. API-total не використовуємо: він рахує всіх. */
   readonly consolidated = computed(() => consolidatePreOrder(this.participants()));
@@ -86,21 +104,26 @@ export class GroupOrderPageComponent implements OnInit {
       .getGroupInvite$(this.reservationId)
       .pipe(
         switchMap((invite) =>
-          forkJoin({
+          // No group id: the group was already sent, so show the owner's order read-only.
+          invite.GroupReservationId === ''
+            ? this.loadSentFallback$(invite)
+            : forkJoin({
             invite: of(invite),
             sessions: this.groupOrders.getSessions$(invite.GroupReservationId),
             ownerSessionId: this.groupOrders.getOwnerSessionId$(this.reservationId),
             status: this.groupOrders.getStatus$(invite.GroupReservationId),
+            ownerItems: this.loadOwnerItems$(),
           }),
         ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: ({ invite, sessions, ownerSessionId, status }) => {
+        next: ({ invite, sessions, ownerSessionId, status, ownerItems }) => {
           this.invite.set(invite);
-          this.participants.set(sessions.participants);
+          this.ownerItems = ownerItems;
           this.ownerSessionId.set(ownerSessionId);
           this.status.set(status);
+          this.participants.set(this.withOwnerOrder(sessions.participants));
           this.updatedAt.set(new Date());
           this.refreshFailed.set(false);
           this.loadState.set('ready');
@@ -109,6 +132,30 @@ export class GroupOrderPageComponent implements OnInit {
           this.loadState.set(error instanceof HttpErrorResponse && error.status === 404 ? 'notFound' : 'error');
         },
       });
+  }
+
+  private loadSentFallback$(invite: GuestInvite) {
+    return this.loadOwnerItems$().pipe(
+      map((ownerItems) => ({
+        invite,
+        sessions: {
+          participants: [
+            {
+              id: 'owner',
+              type: 'Owner' as const,
+              name: 'Owner',
+              items: ownerItems ?? [],
+              total: (ownerItems ?? []).reduce((sum, item) => sum + item.dish.price * item.quantity, 0),
+              isSubmitted: true,
+            },
+          ],
+          total: 0,
+        },
+        ownerSessionId: 'owner',
+        status: { currentParticipants: 1, maxCapacity: invite.MaxGuestCount, status: 'Submitted' as const },
+        ownerItems: null as ParticipantItem[] | null,
+      })),
+    );
   }
 
   refresh(): void {
@@ -141,6 +188,34 @@ export class GroupOrderPageComponent implements OnInit {
     });
   }
 
+  openInviteDialog(): void {
+    this.inviteDialogOpen.set(true);
+    if (this.inviteLink() || this.inviteLoading()) return;
+
+    this.inviteLoading.set(true);
+    this.groupOrders.getInviteToken$(this.reservationId).subscribe({
+      next: ({ token }) => {
+        this.inviteLink.set(`${window.location.origin}/join/${token}`);
+        this.inviteLoading.set(false);
+      },
+      error: () => this.inviteLoading.set(false),
+    });
+  }
+
+  closeInviteDialog(): void {
+    this.inviteDialogOpen.set(false);
+  }
+
+  copyInviteLink(): void {
+    const link = this.inviteLink();
+    if (!link) return;
+
+    navigator.clipboard
+      .writeText(link)
+      .then(() => this.toast.success('Invite link copied'))
+      .catch(() => this.toast.error('Could not copy the link. Select it and copy manually.'));
+  }
+
   askRemove(person: Participant): void {
     this.guestToRemove.set(person);
   }
@@ -155,7 +230,7 @@ export class GroupOrderPageComponent implements OnInit {
     this.removing.set(true);
     this.groupOrders.removeSession$(this.groupId(), person.id).subscribe({
       next: (snapshot) => {
-        this.participants.set(snapshot.participants);
+        this.participants.set(this.withOwnerOrder(snapshot.participants));
         this.removing.set(false);
         this.guestToRemove.set(null);
       },
@@ -182,6 +257,7 @@ export class GroupOrderPageComponent implements OnInit {
           forkJoin({
             sessions: this.groupOrders.getSessions$(this.groupId(), { silent: true }),
             status: this.groupOrders.getStatus$(this.groupId(), { silent: true }),
+            ownerItems: this.loadOwnerItems$(),
           }).pipe(
             catchError(() => {
               this.refreshFailed.set(true);
@@ -191,11 +267,60 @@ export class GroupOrderPageComponent implements OnInit {
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(({ sessions, status }) => {
-        this.participants.set(sessions.participants);
+      .subscribe(({ sessions, status, ownerItems }) => {
+        this.ownerItems = ownerItems;
         this.status.set(status);
+        this.participants.set(this.withOwnerOrder(sessions.participants));
         this.updatedAt.set(new Date());
         this.refreshFailed.set(false);
       });
+  }
+
+  /** Звичайний pre-order Owner (той самий, що в корзині). Помилка — не привід ламати екран. */
+  private loadOwnerItems$(): Observable<ParticipantItem[] | null> {
+    if (!this.http || !this.baseUrl) return of(null);
+
+    return this.http
+      .get<Order>(`${this.baseUrl}/orders/${encodeURIComponent(this.reservationId)}`, {
+        context: new HttpContext().set(SKIP_ERROR_TOAST, true),
+      })
+      .pipe(
+        map((order) =>
+          (order.orderItems ?? []).map(
+            (item): ParticipantItem => ({
+              dish: { id: item.dish.id, name: item.dish.name, price: item.dish.price, imageUrl: item.dish.imageUrl },
+              quantity: item.quantity,
+            }),
+          ),
+        ),
+        catchError(() => of(null)),
+      );
+  }
+
+  /**
+   * Підставляє власні страви Owner зі звичайного pre-order.
+   * Після відправки групи ресторан отримав у цей pre-order ще й страви гостей — їх віднімаємо назад.
+   */
+  private withOwnerOrder(participants: Participant[]): Participant[] {
+    const ownerItems = this.ownerItems;
+    if (!ownerItems) return participants;
+
+    let items = ownerItems;
+    if (this.isSent()) {
+      const guestQuantity = new Map<string, number>();
+      for (const guest of participants.filter((person) => person.type !== 'Owner' && person.isSubmitted)) {
+        for (const item of guest.items) {
+          guestQuantity.set(item.dish.id, (guestQuantity.get(item.dish.id) ?? 0) + item.quantity);
+        }
+      }
+      items = ownerItems
+        .map((item) => ({ ...item, quantity: item.quantity - (guestQuantity.get(item.dish.id) ?? 0) }))
+        .filter((item) => item.quantity > 0);
+    }
+
+    const total = items.reduce((sum, item) => sum + item.dish.price * item.quantity, 0);
+    return participants.map((person) =>
+      person.type === 'Owner' ? { ...person, items, total, isSubmitted: person.isSubmitted || items.length > 0 } : person,
+    );
   }
 }

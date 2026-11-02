@@ -1,4 +1,4 @@
-<main class="page">
+<main class="page" [class.page--embedded]="embedded()">
   @switch (loadState()) {
     @case ('loading') {
       <p class="state" role="status">Loading group pre-order…</p>
@@ -34,6 +34,9 @@
         </ul>
 
         @if (!isReadOnly()) {
+          <button type="button" class="outline-button invite-btn" (click)="openInviteDialog()">
+            Invite more guests
+          </button>
           <p class="sync">
             <span>Updated at {{ updatedAt() | date: 'HH:mm:ss' }}</span>
             <button type="button" class="link-button" (click)="refresh()">Refresh</button>
@@ -44,6 +47,7 @@
         }
       </header>
 
+      <div class="body">
       @if (!hasAnyDishes()) {
         <p class="empty-state">Participants haven’t added any dishes yet</p>
       }
@@ -83,6 +87,8 @@
         </section>
       }
 
+      </div>
+
       <footer class="summary">
         <p class="grand-total"><span>Grand Total</span><span class="grand-total-value">{{ consolidated().total | currency }}</span></p>
         @if (isSent()) {
@@ -103,10 +109,37 @@
         {{ consolidated().total | currency }} will be sent to the restaurant. You won’t be able to change it afterwards.
       </p>
       <div modal-actions class="dialog-actions">
-        <button type="button" class="button button--tertiary button--large" [disabled]="submitting()" (click)="closeSubmitDialog()">Cancel</button>
+        <button type="button" class="text-button" [disabled]="submitting()" (click)="closeSubmitDialog()">Cancel</button>
         <button type="button" class="button button--primary button--large" [disabled]="submitting()" (click)="confirmSubmit()">
           {{ submitting() ? 'Submitting…' : 'Submit' }}
         </button>
+      </div>
+    </app-modal>
+  }
+
+  @if (inviteDialogOpen()) {
+    <app-modal title="Invite more guests" (closed)="closeInviteDialog()">
+      @if (isFull()) {
+        <p class="invite-warning" role="status">
+          All {{ maxGuests() }} seats are taken. To invite more people, first increase the number of guests with
+          <strong>Edit</strong> on your reservation, then come back here and share the link.
+        </p>
+      }
+      <p>Send this link to the people you want to add to the group pre-order.</p>
+      <div class="invite-link">
+        <input
+          type="text"
+          readonly
+          aria-label="Invite link"
+          [value]="inviteLoading() ? 'Loading…' : (inviteLink() ?? 'Link is unavailable')"
+        />
+        <button type="button" class="copy-button" [disabled]="!inviteLink()" (click)="copyInviteLink()">
+          <img src="assets/svg/copy.svg" alt="" width="24" height="24" />
+          <span class="visually-hidden">Copy link</span>
+        </button>
+      </div>
+      <div modal-actions class="dialog-actions">
+        <button type="button" class="text-button" (click)="closeInviteDialog()">Close</button>
       </div>
     </app-modal>
   }
@@ -118,8 +151,8 @@
         cannot be undone.
       </p>
       <div modal-actions class="dialog-actions">
-        <button type="button" class="button button--tertiary button--large" [disabled]="removing()" (click)="cancelRemove()">Cancel</button>
-        <button type="button" class="button button--tertiary button--large danger" [disabled]="removing()" (click)="confirmRemove()">Remove Guest</button>
+        <button type="button" class="text-button" [disabled]="removing()" (click)="cancelRemove()">Cancel</button>
+        <button type="button" class="danger-button" [disabled]="removing()" (click)="confirmRemove()">Remove Guest</button>
       </div>
     </app-modal>
   }

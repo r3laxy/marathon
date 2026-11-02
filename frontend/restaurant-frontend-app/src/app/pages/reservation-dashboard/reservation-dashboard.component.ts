@@ -87,6 +87,33 @@ export class ReservationDashboardComponent implements OnInit {
   readonly reservations = signal<ReservationCustomer[]>([]);
   readonly reservationsLoaded = signal(false);
 
+  readonly activeTab = signal<'all' | 'upcoming' | 'inProgress' | 'completed' | 'canceled'>('all');
+
+  private readonly tabStatus: Record<string, ReservationStatusCustomer | undefined> = {
+    upcoming: ReservationStatusCustomer.Reserved,
+    inProgress: ReservationStatusCustomer.InProgress,
+    completed: ReservationStatusCustomer.Finished,
+    canceled: ReservationStatusCustomer.Cancelled,
+  };
+
+  readonly filteredReservations = computed(() => {
+    const status = this.tabStatus[this.activeTab()];
+    const all = this.reservations();
+    return status === undefined ? all : all.filter((reservation) => reservation.status === status);
+  });
+
+  readonly tabs = computed(() => {
+    const all = this.reservations();
+    const countOf = (status: ReservationStatusCustomer) => all.filter((reservation) => reservation.status === status).length;
+    return [
+      { key: 'all' as const, label: 'All', count: all.length },
+      { key: 'upcoming' as const, label: 'Upcoming', count: countOf(ReservationStatusCustomer.Reserved) },
+      { key: 'inProgress' as const, label: 'In Progress', count: countOf(ReservationStatusCustomer.InProgress) },
+      { key: 'completed' as const, label: 'Completed', count: countOf(ReservationStatusCustomer.Finished) },
+      { key: 'canceled' as const, label: 'Canceled', count: countOf(ReservationStatusCustomer.Cancelled) },
+    ];
+  });
+
   readonly selectedReservation =
     signal<ReservationCustomer | null>(null);
 

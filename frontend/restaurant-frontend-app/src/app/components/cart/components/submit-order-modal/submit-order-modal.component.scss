@@ -21,12 +21,14 @@
   padding: 24px;
   gap: 24px;
   border-radius: 24px;
-  width: 448px;
-  min-height: 152px;
-  background: color.$neutral-100;
+  width: 520px;
+  box-sizing: border-box;
+  padding: 40px;
+  background: color.$neutral-0;
 
-  @media (max-width: 500px) {
-    width: calc(100% - 100px);
+  @media (max-width: 560px) {
+    width: calc(100% - 32px);
+    padding: 24px;
   }
 }
 
@@ -54,4 +56,44 @@
   letter-spacing: 0;
   font-weight: 300;
   line-height: 24px;
+}
+
+.modal-header {
+  align-items: flex-start;
+
+  h2 {
+    margin: 0;
+    font-size: 26px;
+    line-height: 40px;
+    font-weight: 500;
+  }
+}
+
+.close-button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .body {
+    margin: 0;
+    font-weight: 400;
+  }
+}
+
+.view-button {
+  height: 56px;
+  border: 0;
+  border-radius: 8px;
+  background: color.$green-gradient;
+  color: color.$neutral-0;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
 }

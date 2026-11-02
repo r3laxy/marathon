@@ -159,3 +159,259 @@
   font-size: 0.875rem;
   line-height: 1rem;
 }
+
+// ---- Customer card (per Figma) ----
+.card-customer {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: color.$neutral-0;
+  border-radius: 1.5rem;
+  box-shadow: 0 0 10px 4px color.$shadow;
+}
+
+.status-band {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 24px;
+  color: color.$neutral-900;
+  background: color.$neutral-100;
+
+  &.reserved {
+    background: color.$blue-100;
+  }
+
+  &.in-progress {
+    background: color.$orange-100;
+  }
+
+  &.finished {
+    background: color.$green-100;
+  }
+
+  &.canceled {
+    background: color.$red-100;
+  }
+}
+
+.customer-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.customer-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color.$neutral-100;
+}
+
+.customer-address {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.line-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.trash-button {
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.invite-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid color.$neutral-100;
+
+  p {
+    margin: 0;
+    max-width: 220px;
+    font-size: 12px;
+    line-height: 16px;
+    color: color.$neutral-600;
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid color.$neutral-100;
+
+  .details {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    line-height: 24px;
+  }
+}
+
+.customer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.outline-button,
+.solid-button,
+.text-button,
+.copy-button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.outline-button,
+.solid-button {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.outline-button {
+  background: color.$neutral-0;
+  border: 1px solid color.$green-600;
+  color: color.$green-600;
+}
+
+.solid-button {
+  background: color.$green-gradient;
+  border: 0;
+  color: color.$neutral-0;
+}
+
+.text-button {
+  height: 32px;
+  padding: 0 8px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid color.$neutral-900;
+  font-size: 14px;
+  font-weight: 500;
+  color: color.$neutral-900;
+}
+
+// Invite dialog
+.invite-text {
+  margin: 0;
+  color: color.$neutral-600;
+  line-height: 24px;
+}
+
+.invite-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 24px;
+  margin: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid color.$neutral-100;
+  font-size: 14px;
+
+  dt {
+    font-weight: 500;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.invite-label {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.invite-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 16px;
+  background: color.$green-100;
+  border: 1px solid color.$green-150;
+  border-radius: 8px;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    background: none;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    font-size: 14px;
+  }
+}
+
+.copy-button {
+  display: flex;
+  padding: 4px;
+  background: none;
+  border: 0;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.invite-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: color.$neutral-600;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.status-band {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.update-dot {
+  width: 8px;
+  height: 8px;
+  background: #f5a300;
+  border-radius: 50%;
+}
+
+.info-grid .of-total {
+  color: color.$neutral-600;
+}

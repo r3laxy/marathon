@@ -146,7 +146,8 @@ export class MenuPageComponent implements OnInit {
           this.toast.success('Dish added to cart successfully!', 'Success');
         },
         error: (err) => {
-          this.toast.error((err as Error).message, 'Error');
+          const body = (err as { error?: { message?: string } }).error;
+          this.toast.error(body?.message ?? (err as Error).message, 'Error');
         },
       });
   }

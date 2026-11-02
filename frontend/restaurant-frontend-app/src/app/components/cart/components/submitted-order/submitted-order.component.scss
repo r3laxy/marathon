@@ -48,3 +48,17 @@
   letter-spacing: 0;
   vertical-align: middle;
 }
+
+.dish-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dish-thumb {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 50%;
+}

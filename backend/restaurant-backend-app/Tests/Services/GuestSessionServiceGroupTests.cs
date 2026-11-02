@@ -232,4 +232,21 @@ public class GuestSessionServiceGroupTests
         await Assert.ThrowsAsync<GroupReservationNotFoundException>(() =>
             _service.GetOwnerGuestSessionIdAsync(OwnerId, _reservation.Id));
     }
+
+    [Fact]
+    public async Task GetGroupReservationStatusAsync_OwnerSessionExists_CountsOwnerOnce()
+    {
+        GuestSession ownerSession = _fixture.Build<GuestSession>()
+            .With(s => s.GroupReservationId, _group.GroupReservationId)
+            .With(s => s.IsOwnerSession, true)
+            .Create();
+        var sessions = new List<GuestSession> { ownerSession, Guest("session1", "Andrii", true) };
+        _sessionRepository
+            .Setup(r => r.GetAllByGroupReservationIdAsync(_group.GroupReservationId))
+            .ReturnsAsync(sessions);
+
+        GroupReservationStatusResponse result = await _service.GetGroupReservationStatusAsync(_group.GroupReservationId);
+
+        Assert.Equal(2, result.CurrentParticipants);
+    }
 }

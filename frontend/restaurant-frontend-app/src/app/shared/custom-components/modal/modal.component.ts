@@ -11,6 +11,7 @@ export class ModalComponent {
   readonly title = input('');
   readonly width = input('520px');
   readonly closeOnBackdrop = input(true);
+  readonly surface = input<'default' | 'muted'>('default');
 
   readonly closed = output<void>();
 

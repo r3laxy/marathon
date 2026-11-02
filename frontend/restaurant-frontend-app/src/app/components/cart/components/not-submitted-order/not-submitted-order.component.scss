@@ -27,27 +27,108 @@
 .order-item-dish {
   display: flex;
   flex-direction: row;
-  padding: 24px;
+  align-items: center;
+  padding: 12px 16px;
   gap: 16px;
+  background: color.$neutral-0;
   border-radius: 8px;
-  box-shadow: 0 0 10px 4px rgba(194, 194, 194, 0.5);
+  box-shadow: 0 0 5px rgba(218, 218, 218, 0.7);
+}
+
+.dish-image {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
 
   &--initial {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #e9ffea;
-    color: #0f7a37;
+    background: color.$green-100;
+    color: color.$neutral-600;
     font-size: 32px;
-    font-weight: 500;
   }
 }
 
-.dish-image {
-  min-width: 96px;
-  height: 96px;
-  border-radius: 400px;
-  box-shadow: 0 0 10px 4px rgba(194, 194, 194, 0.5);
+.quantity-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.value {
+  min-width: 16px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.step-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: color.$neutral-0;
+  border: 1.4px solid color.$neutral-200;
+  border-radius: 8px;
+  color: color.$neutral-400;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+
+  &--plus,
+  &--active {
+    border-color: color.$green-600;
+    color: color.$green-600;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.item-price {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  color: color.$green-600;
+}
+
+.order-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0 -40px;
+  padding: 16px 40px 24px;
+  background: color.$neutral-0;
+  border-top: 1px solid color.$neutral-100;
+
+  @media (max-width: 650px) {
+    bottom: 0;
+    margin: 0 -16px;
+    padding: 16px 16px 24px;
+  }
+}
+
+.submit-btn {
+  height: 56px;
+  width: 100%;
+  background: color.$green-gradient;
+  border: 0;
+  border-radius: 8px;
+  color: color.$neutral-0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .container {
@@ -81,9 +162,22 @@
 
 .total {
   display: flex;
-  justify-content: end;
+  justify-content: space-between;
   align-items: center;
   gap: 16px;
+
+  .body-bold {
+    font-size: 18px;
+    line-height: 32px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 40px;
+    color: color.$green-800;
+  }
 }
 
 .body {
@@ -114,8 +208,9 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
+  background: color.$neutral-0;
   border-radius: 8px;
-  box-shadow: 0 0 10px 4px rgba(194, 194, 194, 0.5);
+  box-shadow: 0 0 5px rgba(218, 218, 218, 0.7);
 }
 
 .group-header,
@@ -134,7 +229,7 @@
   flex-direction: column;
   gap: 8px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(194, 194, 194, 0.5);
+  border-bottom: 1px solid color.$neutral-100;
 }
 
 .badge {
@@ -143,9 +238,34 @@
   border-radius: 12px;
   font-size: 12px;
   line-height: 16px;
-  background: rgba(194, 194, 194, 0.4);
+  background: color.$neutral-100;
 
   &--submitted {
-    background: rgba(76, 175, 80, 0.2);
+    background: color.$green-100;
+  }
+}
+
+// The owner's dishes inside the group card: flat rows instead of nested shadow cards.
+.group .order-item-dish {
+  padding: 8px 0;
+  box-shadow: none;
+  border-bottom: 1px solid color.$neutral-100;
+}
+
+.group .dish-image {
+  width: 64px;
+  height: 64px;
+  font-size: 24px;
+}
+
+.guest-dish {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  .caption {
+    color: color.$neutral-600;
   }
 }

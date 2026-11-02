@@ -68,6 +68,11 @@
   </section>
 
   @if (selectedDish) {
-    <app-dish-modal [dish]="selectedDish" (closed)="closeModal()"></app-dish-modal>
+    <app-dish-modal
+      [dish]="selectedDish"
+      [preOrderEnabled]="isPreOrderEnabled"
+      (preOrder)="addDishToCart(selectedDish); closeModal()"
+      (closed)="closeModal()"
+    ></app-dish-modal>
   }
 </div>

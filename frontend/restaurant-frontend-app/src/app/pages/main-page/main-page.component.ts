@@ -20,6 +20,7 @@ import { FeedbacksService } from '@app/services/feedbacks/feedbacks.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
 
+import { DishModalComponent } from '@app/components/dish-modal/dish-modal.component';
 import { LoginModalComponent } from '@app/auth/components/login/login-modal/login-modal.component';
 
 @Component({
@@ -27,13 +28,14 @@ import { LoginModalComponent } from '@app/auth/components/login/login-modal/logi
   templateUrl: './main-page.component.html',
   styleUrls: ['./main-page.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterLink, LocationCardComponent, FeedbackWindowComponent, LoginModalComponent, ],
+  imports: [CommonModule, RouterLink, LocationCardComponent, FeedbackWindowComponent, LoginModalComponent, DishModalComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   providers: [LocationsService, DishesService, ReservationService, UsersService, FeedbacksService],
 })
 export class MainPageComponent implements OnInit {
   dishes: DishListResponse[] = [];
   locations: LocationResponse[] = [];
+  selectedDish: DishListResponse | null = null;
 
   showFeedbackModal = false;
   selectedReservationCustomer!: ReservationCustomer;
@@ -79,6 +81,14 @@ export class MainPageComponent implements OnInit {
         this.loadReservationForFeedback(reservationId);
       }
     });
+  }
+
+  openDish(dish: DishListResponse): void {
+    this.selectedDish = dish;
+  }
+
+  closeDish(): void {
+    this.selectedDish = null;
   }
 
   loadPopularDishes(): void {

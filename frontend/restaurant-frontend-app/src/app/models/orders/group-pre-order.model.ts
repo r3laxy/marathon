@@ -1,5 +1,5 @@
 export interface GroupParticipantItem {
-  dish: { id: string; name: string; price: number };
+  dish: { id: string; name: string; price: number; imageUrl?: string };
   quantity: number;
 }
 

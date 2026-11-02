@@ -67,6 +67,26 @@
     }
   }
 
+  // The pre-order button appears on hover / keyboard focus (always visible on touch screens).
+  .preorder-action {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  &:hover .preorder-action,
+  &:focus-within .preorder-action {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .preorder-action {
+      visibility: visible;
+      opacity: 1;
+    }
+  }
+
   // Fade the content only, so the status badge stays crisp.
   &.unavailable {
     pointer-events: none;
@@ -90,8 +110,11 @@
     background: color.$red-100;
     color:  color.$neutral-900;
     font-size: 0.75rem;
+    font-weight: 500;
     line-height: 1rem;
     border-radius: 0.5rem;
+    opacity: 1;
+    white-space: nowrap;
     z-index: 2;
     flex: none;
     order: 2;

@@ -3,10 +3,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   output,
 } from '@angular/core';
 
+import { DishImagesService } from '@app/services/dishes/dish-images.service';
 import { Order } from '@app/models/orders/order.model';
 
 @Component({
@@ -18,6 +20,12 @@ import { Order } from '@app/models/orders/order.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SubmittedOrderComponent {
+  private readonly dishImages = inject(DishImagesService);
+
+  imageFor(dish: { id: string; imageUrl?: string }): string | undefined {
+    return dish.imageUrl || this.dishImages.urlFor(dish.id);
+  }
+
   readonly order = input.required<Order>();
 
   readonly canceled = output<void>();

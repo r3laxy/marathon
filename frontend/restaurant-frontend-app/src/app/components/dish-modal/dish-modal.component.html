@@ -1,27 +1,45 @@
-<div class="modal-overlay" 
-      tabindex="0" 
-      role="button" 
+<div class="modal-overlay"
+      tabindex="0"
+      role="button"
+      aria-label="Close dish details"
       (click)="onClose()"
       (keydown.enter)="onClose()"
-      (keydown.space)="onClose()"></div>
-<div class="modal-content">
-  <button class="close-button" (click)="onClose()">×</button>
+      (keydown.space)="onClose(); $event.preventDefault()"></div>
+
+<div class="modal-content" role="dialog" aria-modal="true" [attr.aria-label]="dish.name">
+  <button type="button" class="close-button" aria-label="Close" (click)="onClose()">
+    <img src="assets/svg/close.svg" alt="" width="24" height="24" />
+  </button>
 
   <img class="dish-image" [src]="dish.imageUrl" [alt]="dish.name" />
 
-  <h3 class="dish-name">{{ dish.name }}</h3>
+  <div class="dish-details">
+    <h3 class="dish-name">{{ dish.name }}</h3>
 
-  <div class="dish-info">
-    <p class="dish-description">{{ dish.description }}</p>
-    <p><strong>Calories:</strong> {{ dish.calories }} kcal</p>
-    <p><strong>Protein:</strong> {{ dish.proteins }}</p>
-    <p><strong>Fats:</strong> {{ dish.fats }}g</p>
-    <p><strong>Carbohydrates:</strong> {{ dish.carbohydrates }}</p>
-    <p><strong>Vitamins and minerals:</strong> {{ dish.vitamins }}</p>
-  </div>
+    <div class="dish-info">
+      <p class="dish-description">{{ dish.description }}</p>
 
-  <div class="price-weight">
-    <span>{{ dish.price }}$</span>
-    <span>{{ dish.weight }}</span>
+      <p class="dish-calories"><span class="label">Calories:</span> {{ dish.calories }} kcal</p>
+
+      <div class="dish-nutrition">
+        <p>
+          <span class="label">Protein:</span> {{ dish.proteins }}
+          <span class="label">Fats:</span> {{ dish.fats }}g
+          <span class="label">Carbs:</span> {{ dish.carbohydrates }}
+        </p>
+        <p><span class="label">Vitamins &amp; minerals:</span> {{ dish.vitamins }}</p>
+      </div>
+    </div>
+
+    <div class="price-row">
+      <p class="price-weight">
+        <span class="price">${{ dish.price }}</span>
+        <span class="weight">/{{ dish.weight }}</span>
+      </p>
+
+      @if (preOrderEnabled) {
+        <button type="button" class="preorder-button" (click)="preOrder.emit()">Pre-Order</button>
+      }
+    </div>
   </div>
 </div>
