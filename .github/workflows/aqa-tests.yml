@@ -10,6 +10,9 @@ on:
           - all
           - ui
           - api
+          - level1
+          - level2
+          - level3
         default: all
       custom_filter:
         description: >
@@ -57,6 +60,7 @@ jobs:
           AQA_UI_URL: ${{ vars.AQA_UI_URL }}
           AQA_API_URL: ${{ vars.AQA_API_URL }}
           AQA_TESTTABLE_ID: ${{ vars.AQA_TESTTABLE_ID }}
+          AQA_TESTTABLE_LOCATION_ID: ${{ vars.AQA_TESTTABLE_LOCATION_ID }}
           AQA_WAITER_USERNAME: ${{ secrets.AQA_WAITER_USERNAME }}
           AQA_WAITER_PASSWORD: ${{ secrets.AQA_WAITER_PASSWORD }}
           AQA_ADMIN_USERNAME: ${{ secrets.AQA_ADMIN_USERNAME }}
@@ -78,6 +82,7 @@ jobs:
           UI_URL:AQA_UI_URL
           API_URL:AQA_API_URL
           TESTTABLE_ID:AQA_TESTTABLE_ID
+          TESTTABLE_LOCATION_ID:AQA_TESTTABLE_LOCATION_ID
           WAITER_USERNAME:AQA_WAITER_USERNAME
           WAITER_PASSWORD:AQA_WAITER_PASSWORD
           ADMIN_USERNAME:AQA_ADMIN_USERNAME
@@ -118,6 +123,8 @@ jobs:
             filter="/*/*/*/*[Category=ui]"
           elif [ "$scope" = "api" ]; then
             filter="/*/*/*/*[Category=api]"
+          elif [ "$scope" = "level1" ] || [ "$scope" = "level2" ] || [ "$scope" = "level3" ]; then
+            filter="/*/*/*/*[Category=$scope]"
           else
             filter=""
           fi
@@ -137,6 +144,27 @@ jobs:
             dotnet bin/Release/net10.0/restaurant-aqa-framework.dll --report-trx \
               --results-directory TestResults
           fi
+
+      # The star: the same run, imported into Report Portal as a launch. Runs only when the repository has the three
+      # Report Portal values (Settings -> Secrets and variables -> Actions); a failure to import never fails the job.
+      - name: Publish to Report Portal
+        if: always()
+        continue-on-error: true
+        env:
+          RP_ENDPOINT: ${{ vars.RP_ENDPOINT }}
+          RP_PROJECT: ${{ vars.RP_PROJECT }}
+          RP_API_TOKEN: ${{ secrets.RP_API_TOKEN }}
+        run: |
+          if [ -z "$RP_ENDPOINT" ] || [ -z "$RP_PROJECT" ] || [ -z "$RP_API_TOKEN" ]; then
+            echo "Report Portal is not configured (RP_ENDPOINT, RP_PROJECT, RP_API_TOKEN) - skipping."
+            exit 0
+          fi
+          python3 tools/trx_to_junit.py TestResults/*.trx TestResults/junit.xml \
+            --name "AQA ${{ github.run_number }} (${{ github.event_name }})"
+          (cd TestResults && zip -q junit.zip junit.xml)
+          curl --fail-with-body -sS -X POST "${RP_ENDPOINT%/}/api/v1/${RP_PROJECT}/launch/import" \
+            -H "Authorization: Bearer ${RP_API_TOKEN}" \
+            -F "file=@TestResults/junit.zip;type=application/zip"
 
       - name: Upload TUnit report
         if: always()
