@@ -107,6 +107,25 @@ Scenarios run in parallel and are independent of each other.
 - The waiter checks assume the waiter in `WAITER_*` is the one assigned to the reservation (that is why a test table with that waiter is required).
 - Removal of a participant and the 30-minute lock are tested on the API; the UI covers removal through the page only for the happy path.
 
+### Defects the tests found
+
+A full run against the deployed `develop` environment (137 scenarios) ends with **6 failures, and all of them are
+defects of the application itself, none are test problems**. They are kept failing on purpose, so the report shows them.
+
+| Scenario | Expected | Actual |
+|---|---|---|
+| A guest sees the capacity the manager entered | the location's capacity as entered (80) | 0 |
+| The form explains what is wrong with a detail (last name, empty / too long) | "Last name is required" / "Last name must be up to 50 characters" | the message is not shown (2 scenarios) |
+| An invalid location is not created (empty address / negative capacity) | 400 | 201, the invalid location is created (2 scenarios) |
+| Someone who never registered is refused the same way | 401 | 500 Internal Server Error |
+
+Two more observations from running the suite, which are not failures but explain why some calls are slow:
+
+- Adding a dish to a guest's cart reads the location's dishes with a table scan (`DishRepository.GetDishesByLocationIdAsync`).
+  On the small shared `develop` stack this sometimes answers with 504 or does not see a just-created dish for a while, so the
+  tests retry that one call for up to a minute. A query by an index instead of a scan would remove the delays.
+- For the same reason CI runs two tests at a time with a 60 second timeout (`MAX_PARALLEL_TESTS`, `DEFAULT_TIMEOUT_MS`).
+
 ## Quality gates
 
 | Where | What runs |
