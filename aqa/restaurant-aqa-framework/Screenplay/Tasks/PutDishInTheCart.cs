@@ -19,13 +19,14 @@ public sealed class PutDishInTheCart(
         var groups = new GroupOrdersApi(actor.UsingTheApi());
 
         // A dish added a moment ago may not be listed for its location yet (the backend reads it through an eventually
-        // consistent index), so that one refusal is retried for a few seconds, and so is a gateway timeout (5xx) from the busy
+        // consistent index), so that one refusal is retried for up to a minute, and so is a gateway timeout (5xx) from the busy
         // develop backend; every other answer is final.
+        var started = DateTime.UtcNow;
         for (var attempt = 1; ; attempt++)
         {
             await response.CaptureAsync(await groups.AddDishAsync(cart.SessionId, new GuestDishRequest(dish.Id, portions), guest.Token));
             var transient = response.Status >= 500 || response.Body.Contains("not available at this location", StringComparison.Ordinal);
-            if (response.Succeeded || attempt == 30 || !transient)
+            if (response.Succeeded || !transient || DateTime.UtcNow - started > TimeSpan.FromSeconds(60))
                 break;
 
             await Task.Delay(TimeSpan.FromSeconds(1));
