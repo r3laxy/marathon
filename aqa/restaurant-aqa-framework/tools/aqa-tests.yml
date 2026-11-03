@@ -47,6 +47,10 @@ jobs:
       # Default anyway (Configuration/Settings.cs) - set explicitly so the choice is visible here:
       # a trace is only captured for a failed @ui scenario (or one tagged @trace-always).
       TRACE_MODE: "OnFailureOnly"
+      # The shared 'develop' backend is slow under load (a Lambda that scans a table answers in seconds, sometimes
+      # more): a long timeout and two tests at a time keep the run from failing on timeouts instead of on defects.
+      DEFAULT_TIMEOUT_MS: "60000"
+      MAX_PARALLEL_TESTS: "2"
     steps:
       - uses: actions/checkout@v5
 
